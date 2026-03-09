@@ -1,0 +1,6 @@
+aiogram==3.25.0
+ydb-sqlalchemy==0.1.18
+ydb[yc]==3.26.4
+yandex-ai-studio-sdk==0.19.2
+openai==2.21.0
+pydantic==2.12.5
