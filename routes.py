@@ -2,7 +2,8 @@ from aiogram import Router, filters
 from aiogram.types import Message
 from aiogram.utils import markdown
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+
+from states import TrackerCreds
 
 router = Router()
 
@@ -20,11 +21,6 @@ async def command_start_handler(message: Message, state: FSMContext):
         Если ты хочешь начать пользоваться ботом, введи команду /login,
         чтобы начать процесс связывания трекера с ботом."""
     )
-
-
-class TrackerCreds(StatesGroup):
-    token = State()
-    org_id = State()
 
 
 @router.message(filters.Command("login"))
