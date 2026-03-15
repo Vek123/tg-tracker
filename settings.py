@@ -17,6 +17,7 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 ENV = os.environ.get("ENV", "prod")
 YDB_URL = os.environ["YDB_URL"]
 SA_KEY = json.loads(os.environ["SA_KEY"])
+YC_FOLDER_ID = os.environ["YC_FOLDER_ID"]
 
 
 def create_jwt_token():

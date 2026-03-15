@@ -1,10 +1,11 @@
 import abc
 import datetime
+import requests
+
 from typing import Any, Protocol, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
-import requests
 
 
 class Base(BaseModel):
@@ -106,6 +107,12 @@ class SecretUpdateData(Base):
     password_payload_specification: PasswordPayloadSpecification | None = None
 
 
+class SecretUpdateVersionData(Base):
+    payloadEntries: list[Payload]
+    description: str | None = None
+    baseVersionId: str | None = None
+
+
 class SecretCreateData(Base):
     folder_id: str
     name: str
@@ -132,6 +139,9 @@ class ISecretService(Protocol):
     def update(self, secret_id: str, data: object) -> object: ...
 
     @abc.abstractmethod
+    def update_version(self, secret_id: str, data: object) -> object: ...
+
+    @abc.abstractmethod
     def delete(self, secret_id: str) -> object: ...
 
     @abc.abstractmethod
@@ -139,6 +149,9 @@ class ISecretService(Protocol):
 
 
 class RequestService:
+    def __init__(self):
+        self.session = requests.Session()
+
     def request[T](
         self,
         url: str,
@@ -158,15 +171,14 @@ class RequestService:
         return type(response_type)(**response.json())
 
 
-class YCSecretService(RequestService):
-    base_url = "https://lockbox.api.cloud.yandex.net/lockbox/v1/secrets"
-
+class IAMTokenBearerAuthService(RequestService):
     def __init__(self, iam_token: str):
-        self.session = requests.Session(
-            headers={
-                "Authorization": f"Bearer {iam_token}",
-            }
-        )
+        super().__init__()
+        self.session.headers["Authorization"] = f"Bearer {iam_token}"
+
+
+class YCSecretService(IAMTokenBearerAuthService):
+    base_url = "https://lockbox.api.cloud.yandex.net/lockbox/v1/secrets"
 
     def get(self, secret_id: str) -> SecretDataResponse:
         return self.request(
@@ -179,6 +191,14 @@ class YCSecretService(RequestService):
             f"{self.base_url}/{secret_id}",
             SecretModifyResponse,
             "patch",
+            data,
+        )
+
+    def update_version(self, secret_id: str, data: SecretUpdateVersionData) -> SecretModifyResponse:
+        return self.request(
+            f"{self.base_url}/{secret_id}:addVersion",
+            SecretModifyResponse,
+            "post",
             data,
         )
 
@@ -198,15 +218,8 @@ class YCSecretService(RequestService):
         )
 
 
-class YCPayloadService(RequestService):
+class YCPayloadService(IAMTokenBearerAuthService):
     base_url = "https://lockbox.api.cloud.yandex.net/lockbox/v1/secrets/{secret_id}/payload"
-
-    def __init__(self, iam_token: str):
-        self.session = requests.Session(
-            headers={
-                "Authorization": f"Bearer {iam_token}",
-            }
-        )
 
     def get(self, secret_id: str, version_id: str | None = None) -> list[Payload]:
         data = self.request(
@@ -214,3 +227,9 @@ class YCPayloadService(RequestService):
             params={"versionId": version_id},
         )
         return [Payload(secret) for secret in data["entries"]]
+
+
+class YCVaultService:
+    def __init__(self, iam_token: str):
+        self.secret = YCSecretService(iam_token)
+        self.payload = YCPayloadService(iam_token)

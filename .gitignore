@@ -208,3 +208,6 @@ __marimo__/
 
 # YC
 key.json
+
+.build/
+.deps/

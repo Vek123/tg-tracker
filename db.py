@@ -1,6 +1,6 @@
 import contextlib
+import json
 
-import logging
 from typing import Iterator
 
 import ydb
@@ -17,11 +17,8 @@ from sqlalchemy.engine import (
 
 import settings
 
-from logger import init_logger
+from logger import logger
 from models import Table
-
-init_logger()
-logger = logging.getLogger(__name__)
 
 
 class DatabaseSessionManager:
@@ -78,7 +75,7 @@ class DatabaseSessionManager:
 db_manager = DatabaseSessionManager()
 db_manager.init(
     settings.YDB_URL,
-    credentials=ydb.iam.ServiceAccountCredentials.from_file(settings.SA_KEY_FILE),
+    credentials=ydb.iam.ServiceAccountCredentials.from_content(json.dumps(settings.SA_KEY)),
     protocol="grpcs",
 )
 

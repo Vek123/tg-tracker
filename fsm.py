@@ -8,6 +8,7 @@ from sqlalchemy import delete, select
 
 from db import get_session, Session
 from models import Fsm
+from logger import logger
 
 
 class YDBStorage(BaseStorage):
@@ -40,14 +41,25 @@ class YDBStorage(BaseStorage):
         """
         key = self.key_builder.build(key, "state")
         value = self.resolve_state(state)
-        query = select(Fsm).where(Fsm.key == key).with_for_update()
+        logger.info(f"Setting state {key}:{value}")
+
         with self.get_session() as session:
+            if not value:
+                query = delete(Fsm).where(Fsm.key == key)
+                logger.info("Deleting state")
+                session.execute(query)
+                session.commit()
+                return
+
+            query = select(Fsm).where(Fsm.key == key)
             fsm = session.execute(query).scalars().first()
             if not fsm:
                 fsm = Fsm(key=key, value=value)
+                logger.info(f"Creating state {key}")
                 session.add(fsm)
             else:
                 fsm.value = value
+                logger.info(f"Updating state {key}")
 
             session.commit()
 
@@ -60,8 +72,11 @@ class YDBStorage(BaseStorage):
         """
         key = self.key_builder.build(key, "state")
         query = select(Fsm.value).where(Fsm.key == key)
+        logger.info(f"Getting state: {key}")
+
         with self.get_session() as session:
             state = session.execute(query).scalars().first()
+            logger.info(f"Got state: {state}")
             return state
 
     async def set_data(self, key: StorageKey, data: Mapping[str, Any]) -> None:  # noqa: F821
@@ -77,19 +92,24 @@ class YDBStorage(BaseStorage):
 
         key = self.key_builder.build(key, "data")
         value = json.dumps(data)
+        logger.info(f"Setting data {key}:{value}")
+
         with self.get_session() as session:
             if not data:
                 query = delete(Fsm).where(Fsm.key == key)
+                logger.info(f"Deleting data {key}")
                 session.execute(query)
                 session.commit()
                 return
 
-            query = select(Fsm).where(Fsm.key == key).with_for_update()
+            query = select(Fsm).where(Fsm.key == key)
             fsm = session.execute(query).scalars().first()
             if not fsm:
+                logger.info(f"Creating data {key}")
                 fsm = Fsm(key=key, value=value)
                 session.add(fsm)
             else:
+                logger.info(f"Updating data {key}")
                 fsm.value = value
 
             session.commit()
@@ -102,10 +122,17 @@ class YDBStorage(BaseStorage):
         :return: current data
         """
         key = self.key_builder.build(key, "data")
-        query = select(Fsm).where(key == key)
+        query = select(Fsm).where(Fsm.key == key)
+        logger.info(f"Getting data {key}")
+
         with self.get_session() as session:
             fsm = session.execute(query).scalars().first()
             if not fsm:
+                logger.info(f"No data found for {key}")
                 return {}
 
+            logger.info(f"Got data {fsm.value}")
             return json.loads(fsm.value)
+
+    async def close(self):
+        pass

@@ -15,8 +15,7 @@ class Table(DeclarativeBase):
 class User(Table):
     __tablename__ = "user"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    tg_id: Mapped[int]
+    tg_id: Mapped[int] = mapped_column(primary_key=True)
     language: Mapped[LANGUAGES] = mapped_column(default=LANGUAGES.RU)
 
 
@@ -25,3 +24,10 @@ class Fsm(Table):
 
     key: Mapped[str] = mapped_column(primary_key=True)
     value: Mapped[str]
+
+
+class Secret(Table):
+    __tablename__ = "secret"
+
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    secret_id: Mapped[str]

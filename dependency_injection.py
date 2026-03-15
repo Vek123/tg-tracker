@@ -1,6 +1,7 @@
+import inspect
+
 from copy import copy
 from functools import wraps
-import inspect
 from typing import Any, Callable, ParamSpec, TypeVar
 
 Param = ParamSpec("Param")

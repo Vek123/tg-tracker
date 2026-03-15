@@ -1,14 +1,13 @@
 import abc
-from dataclasses import dataclass
-import logging
 
+from dataclasses import dataclass
 from typing import Any
+
 from openai import OpenAI
 from openai.types.responses import Response
 from openai.types.responses.response_output_item import McpApprovalRequest
 
-
-logger = logging.getLogger(__name__)
+from logger import logger
 
 
 class IChat(abc.ABC):
@@ -53,7 +52,7 @@ class Chat(IChat):
         response = self.client.responses.create(
             **self._build_request(approval_requests=requests),
         )
-        if not response.error:
+        if response.error:
             logger.error("Error was occured while approving requests")
             logger.error(response.error.message)
         else:
