@@ -7,17 +7,11 @@ from aiogram.client.default import DefaultBotProperties
 
 import settings
 
-from db import create_tables
-from fsm import YDBStorage
+from apps.fsm import init_fsm_storage
+from db.core import db_manager
 from logger import logger
-from middleware import VaultMiddleware
 from routes import router
-
-create_tables()
-dp = Dispatcher(storage=YDBStorage())
-bot = Bot(settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2))
-dp.include_router(router)
-dp.message.middleware(VaultMiddleware())
+from utils.import_ import import_attr
 
 
 async def handle_request(message: dict[str, Any]):
@@ -32,3 +26,17 @@ async def handler(event, context):
         "statusCode": 200,
         "body": "",
     }
+
+
+def register_middlewares(dp: Dispatcher, middlewares_paths: list[str]):
+    for path in middlewares_paths:
+        cls = import_attr(path)
+        dp.message.middleware(cls())
+
+
+db_manager.create_tables()
+dp = Dispatcher(storage=init_fsm_storage())
+bot = Bot(settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2))
+
+dp.include_router(router)
+register_middlewares(dp, settings.MIDDLEWARE)

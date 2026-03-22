@@ -1,39 +1,32 @@
 import contextlib
-import json
 
-from typing import Iterator
-
-import ydb
+from typing import Any, Iterator
 
 from sqlalchemy.orm import (
     Session,
     sessionmaker,
 )
 from sqlalchemy.engine import (
-    Engine,
     create_engine,
     Connection,
 )
 
-import settings
+from apps.core.models import Model
 
 from logger import logger
-from models import Table
+import settings
 
 
-class DatabaseSessionManager:
-    def __init__(self) -> None:
-        self._engine: Engine | None = None
-        self._sessionmaker: sessionmaker[Session] | None = None
-
-    def init(self, db_url: str, **connect_args) -> None:
-        if "postgresql" in db_url:
+class DBSessionManager:
+    def __init__(self, url: str, **connect_args: Any) -> None:
+        if "postgresql" in url:
             connect_args.update({
                 "statement_cache_size": 0,
                 "prepared_statement_cache_size": 0,
             })
+
         self._engine = create_engine(
-            url=db_url,
+            url=url,
             connect_args=connect_args,
         )
         self._sessionmaker = sessionmaker(
@@ -71,23 +64,11 @@ class DatabaseSessionManager:
                 connection.rollback()
                 raise
 
+    def create_tables(self) -> None:
+        with self.connect() as conn:
+            Model.metadata.create_all(conn)
 
-db_manager = DatabaseSessionManager()
-db_manager.init(
-    settings.YDB_URL,
-    credentials=ydb.iam.ServiceAccountCredentials.from_content(json.dumps(settings.SA_KEY)),
-    protocol="grpcs",
-)
+        logger.info("Tables was created")
 
 
-def create_tables() -> None:
-    with db_manager.connect() as conn:
-        Table.metadata.create_all(conn)
-
-    logger.info("Tables was created")
-
-
-@contextlib.contextmanager
-def get_session() -> Iterator[Session]:
-    with db_manager.session() as session:
-        yield session
+db_manager = DBSessionManager(**settings.DATABASE)

@@ -6,8 +6,8 @@ from aiogram.exceptions import DataNotDictLikeError
 from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType, State, KeyBuilder, DefaultKeyBuilder
 from sqlalchemy import delete, select
 
-from db import get_session, Session
-from models import Fsm
+from db.core import db_manager, Session
+from apps.fsm.models import Fsm
 from logger import logger
 
 
@@ -15,7 +15,7 @@ class YDBStorage(BaseStorage):
     def __init__(
         self,
         key_builder: KeyBuilder | None = None,
-        get_session: Callable[[], Session] = get_session,
+        get_session: Callable[[], Session] = db_manager.session,
     ):
         if key_builder is None:
             key_builder = DefaultKeyBuilder()

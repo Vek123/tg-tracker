@@ -1,7 +1,7 @@
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-import models
+from apps.vault import models
 
 
 class SecretService:

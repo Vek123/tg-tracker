@@ -1,55 +1,33 @@
+import dataclasses
 import json
 import os
 
-import time
 import dotenv
-import jwt
+import ydb
 
-import yandexcloud
-
-from yandex.cloud.iam.v1.iam_token_service_pb2 import CreateIamTokenRequest
-from yandex.cloud.iam.v1.iam_token_service_pb2_grpc import IamTokenServiceStub
+from apps.auth.schemas import SAKey
+from apps.auth.utils import create_iam_token, create_jwt_token
 
 dotenv.load_dotenv(".env")
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 
 ENV = os.environ.get("ENV", "prod")
-YDB_URL = os.environ["YDB_URL"]
-SA_KEY = json.loads(os.environ["SA_KEY"])
+SA_KEY = SAKey(**json.loads(os.environ["SA_KEY"]))
 YC_FOLDER_ID = os.environ["YC_FOLDER_ID"]
+JWT_TOKEN = create_jwt_token(SA_KEY)
+IAM_TOKEN = create_iam_token(SA_KEY)
 
+DATABASE = {
+    "url": os.environ["YDB_URL"],
+    "credentials": ydb.iam.ServiceAccountCredentials.from_content(json.dumps(dataclasses.asdict(SA_KEY))),
+    "protocol": "grpcs",
+}
 
-def create_jwt_token():
-    now = int(time.time())
-    payload = {
-            'aud': 'https://iam.api.cloud.yandex.net/iam/v1/tokens',
-            'iss': SA_KEY["service_account_id"],
-            'iat': now,
-            'exp': now + 3600
-        }
+FSM_STORAGE = {
+    "path": "apps.fsm.ydb.YDBStorage",
+}
 
-    encoded_token = jwt.encode(
-        payload,
-        SA_KEY["private_key"],
-        algorithm='PS256',
-        headers={'kid': SA_KEY["id"]}
-    )
-
-    return encoded_token
-
-
-def create_iam_token():
-    jwt = create_jwt_token()
-    sdk = yandexcloud.SDK(
-        service_account_key={
-            "id": SA_KEY["id"],
-            "service_account_id": SA_KEY["service_account_id"],
-            "private_key": SA_KEY["private_key"],
-        },
-    )
-    iam_service = sdk.client(IamTokenServiceStub)
-    iam_token = iam_service.Create(
-        CreateIamTokenRequest(jwt=jwt)
-    )
-    return iam_token.iam_token
+MIDDLEWARE = (
+    "apps.core.middleware.DBSessionMiddleware",
+)
