@@ -1,6 +1,6 @@
 .PHONY: compile clean update_deps
 
-compile:
+build:
 	-rmdir /s /q .build 2>nul
 	mkdir .build
 	if not exist ".deps" @update_deps

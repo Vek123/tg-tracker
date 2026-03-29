@@ -31,3 +31,5 @@ FSM_STORAGE = {
 MIDDLEWARE = (
     "apps.core.middleware.DBSessionMiddleware",
 )
+
+YC_AI_MODEL_URL = f"gpt://{YC_FOLDER_ID}/yandexgpt/rc"

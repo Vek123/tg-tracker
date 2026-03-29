@@ -61,7 +61,7 @@ class ProcessTrackerOrgIdStateView(View):
         [TrackerCreds.org_id],
     )
 
-    async def handle(self, message: Message, state: FSMContext, db_session: Session):
+    async def handle(self, message: Message, state: FSMContext):
         org_id = message.text
         data = await state.get_data()
 

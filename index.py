@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any
 
@@ -31,7 +32,8 @@ async def handler(event, context):
 def register_middlewares(dp: Dispatcher, middlewares_paths: list[str]):
     for path in middlewares_paths:
         cls = import_attr(path)
-        dp.message.middleware(cls())
+        for observer in cls.observers:
+            dp.observers[observer].middleware(cls())
 
 
 db_manager.create_tables()
@@ -40,3 +42,4 @@ bot = Bot(settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.
 
 dp.include_router(router)
 register_middlewares(dp, settings.MIDDLEWARE)
+# asyncio.run(dp.start_polling(bot))

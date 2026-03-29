@@ -48,18 +48,6 @@ class Chat(IChat):
 
         return [{"role": "developer", "content": text} for text in developer_input]
 
-    def _approve_mcp_requests(self, requests: list[ApproveRequest]) -> Response:
-        response = self.client.responses.create(
-            **self._build_request(approval_requests=requests),
-        )
-        if response.error:
-            logger.error("Error was occured while approving requests")
-            logger.error(response.error.message)
-        else:
-            logger.info("Requests was successfully approved")
-
-        return response
-
     def _handle_response(self, response: Response) -> str | list[McpApprovalRequest] | None:
         self.previous_response_id = response.id
         if response.error:
@@ -125,6 +113,18 @@ class Chat(IChat):
         logger.info("Request was built")
         return data
 
+    def approve_mcp_requests(self, requests: list[ApproveRequest]) -> Response:
+        response = self.client.responses.create(
+            **self._build_request(approval_requests=requests),
+        )
+        if response.error:
+            logger.error("Error was occured while approving requests")
+            logger.error(response.error.message)
+        else:
+            logger.info("Requests was successfully approved")
+
+        return response
+
     def message(self, text: str, files: list[str] | None = None, auto_approve: bool = False):
         logger.info("Sending message...")
         response = self.client.responses.create(
@@ -141,7 +141,7 @@ class Chat(IChat):
             if not auto_approve:
                 break
             else:
-                response = self._approve_mcp_requests([ApproveRequest(request.id, True) for request in processed_response])
+                response = self.approve_mcp_requests([ApproveRequest(request.id, True) for request in processed_response])
 
         return processed_response
 

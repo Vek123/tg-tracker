@@ -7,7 +7,7 @@ import settings
 
 from apps.vault.integrations.yc.clients import YCVaultClient
 
-from .schemas import Payload, SecretCreateData, SecretUpdateVersionData
+from .schemas import Payload, SecretCreateIn, SecretUpdateVersionIn
 
 
 @dataclass
@@ -26,7 +26,7 @@ class TrackerSecretRepository:
         self.client = client
 
     @classmethod
-    def create(cls, client: YCVaultClient, data: TrackerData | None, user_id: int | None) -> Self:
+    def create(cls, client: YCVaultClient, data: TrackerData, user_id: int) -> Self:
         payloads = []
         if data.org_id:
             payloads.append(Payload(key=cls.org_id_key_field, text_value=str(data.org_id)))
@@ -35,23 +35,23 @@ class TrackerSecretRepository:
             payloads.append(Payload(key=cls.token_key_field, text_value=data.token))
     
         secret = client.secret.create(
-            SecretCreateData(
+            SecretCreateIn(
                 folder_id=settings.YC_FOLDER_ID,
                 name=cls.secret_name(user_id),
                 version_payload_entries=payloads,
             )
         )
-        secret_id = secret.metadata.secret_id
+        secret_id = secret.current_version.secret_id
         return cls(client=client, secret_id=secret_id)
 
     @classmethod
-    def get(cls, client: YCVaultClient, secret_id: str) -> Self | None:
+    def exists(cls, client: YCVaultClient, secret_id: str) -> bool:
         try:
             client.secret.get(secret_id)
         except HTTPError:
-            return
+            return False
 
-        return cls(client, secret_id)
+        return True
 
     @classmethod
     def secret_name(cls, user_id: int) -> str:
@@ -83,7 +83,7 @@ class TrackerSecretRepository:
         if token:
             payloads.append(Payload(key=self.token_key_field, text_value=token))
 
-        data = SecretUpdateVersionData(
+        data = SecretUpdateVersionIn(
             payloadEntries=payloads,
         )
         self.client.secret.update_version(

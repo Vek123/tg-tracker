@@ -34,12 +34,21 @@ class DeleteSecretTrackerFilterView(View):
         [F.data == TrackerCredentialsExistedSecretKeyboard.DELETE_DATA]
     )
 
-    async def handle(self, callback: CallbackQuery, db_session: Session, vault):
+    async def handle(self, callback: CallbackQuery, db_session: Session):
         service = SecretService(db_session)
-        secret = service.get(callback.message.from_user.id)
+        secret = service.get(callback.from_user.id)
         TrackerSecretRepository(YCVaultClient(settings.IAM_TOKEN), secret.secret_id).delete()
-        service.delete(callback.message.from_user.id)
+        service.delete(callback.from_user.id)
 
+        await callback.message.delete()
         await callback.answer()
         await callback.message.answer("Секрет успешно удалён\\.")
 
+
+class AIMessageFilterView(View):
+    observer = Observer(
+        "message",
+    )
+
+    async def handle(self, callback: CallbackQuery):
+        ...
