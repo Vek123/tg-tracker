@@ -1,18 +1,8 @@
-import datetime
+from typing import Self
 
-from typing import Any, Self
+from pydantic import Field, model_validator
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-from pydantic.alias_generators import to_camel
-
-
-class Base(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        validate_by_name=True,
-        serialize_by_alias=True,
-        extra="allow",
-    )
+from apps.core.integrations.yc.schemas import Base
 
 
 class BaseSecretMetadata(Base):
@@ -21,24 +11,6 @@ class BaseSecretMetadata(Base):
 
 class SecretMetadata(BaseSecretMetadata):
     version_id: str
-
-
-class ErrorData(Base):
-    code: int
-    message: str
-    details: list[dict[str, Any]]
-
-
-class OperationResponse(Base):
-    id: str
-    created_by: str
-    created_at: datetime.datetime
-    modified_at: datetime.datetime
-    done: bool
-    error: ErrorData | None = None
-    metadata: BaseSecretMetadata
-    description: str
-    response: dict[str, Any] | None = None
 
 
 class SecretCurrentVersion(Base):

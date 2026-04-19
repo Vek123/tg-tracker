@@ -1,7 +1,10 @@
 from aiogram import F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
+from apps.account.models import User
+from apps.ai.dialog import Chat
+from apps.ai.integrations.yc.tools.tracker import get_personal_use_tools
 from apps.core.schemas import Observer
 from apps.core.views import View
 from apps.vault.integrations.yc.repositories import TrackerSecretRepository, YCVaultClient
@@ -21,6 +24,7 @@ class UpdateSecretTrackerFilterView(View):
 
     async def handle(self, callback: CallbackQuery, state: FSMContext):
         await callback.answer()
+        await callback.message.delete()
         await callback.message.answer(
             "Давай начнём, сначала тебе нужно отправить мне свой OAuth токен от трекера\\."
             + " Не переживай, я его буду хранить всегда в зашифрованном виде\\."
@@ -48,7 +52,19 @@ class DeleteSecretTrackerFilterView(View):
 class AIMessageFilterView(View):
     observer = Observer(
         "message",
+        filters=[],
     )
 
-    async def handle(self, callback: CallbackQuery):
-        ...
+    async def handle(self, message: Message, db_session: Session, user: User):
+        if user.mcp is None:
+            return message.answer((
+                "Сначала тебе нужно добавить данные для авторизации в трекере\\.\n"
+                "Используй команду /login"
+            ))
+
+        chat = Chat(
+            model_url=settings.YC_AI_MODEL_URL,
+            tools=get_personal_use_tools(user.mcp.mcp_base_url)
+        )
+        answer = chat.message(message.text)
+        return await message.answer(answer)

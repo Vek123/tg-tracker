@@ -1,19 +1,13 @@
-from dataclasses import dataclass
 from typing import Self
 
 from requests import HTTPError
 
 import settings
 
+from apps.tracker.schemas import TrackerData
 from apps.vault.integrations.yc.clients import YCVaultClient
 
 from .schemas import Payload, SecretCreateIn, SecretUpdateVersionIn
-
-
-@dataclass
-class TrackerData:
-    org_id: int | None = None
-    token: str | None = None
 
 
 class TrackerSecretRepository:

@@ -2,6 +2,11 @@ from aiogram import F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
+from apps.account.models import User
+from apps.ai.integrations.yc.repositories import TrackerMcpRepository
+from apps.ai.integrations.yc.clients import McpClient
+from apps.ai.integrations.yc.tools.tracker import McpTrackerData
+from apps.ai.services.user_mcp import UserMcpService
 from apps.core.schemas import Observer
 from apps.core.views import View
 from apps.vault.integrations.yc.repositories import TrackerSecretRepository, YCVaultClient, TrackerData
@@ -61,11 +66,18 @@ class ProcessTrackerOrgIdStateView(View):
         [TrackerCreds.org_id],
     )
 
-    async def handle(self, message: Message, state: FSMContext):
+    async def handle(self, message: Message, state: FSMContext, user: User, db_session: Session):
         org_id = message.text
         data = await state.get_data()
 
-        TrackerSecretRepository(YCVaultClient(settings.IAM_TOKEN), data["secret_id"]).update(org_id=org_id)
+        repo = TrackerSecretRepository(YCVaultClient(settings.IAM_TOKEN), data["secret_id"])
+        repo.update(org_id=org_id)
+        if user.mcp is None:
+            mcp = TrackerMcpRepository(McpClient(settings.IAM_TOKEN)).create(
+                data=McpTrackerData(secret_id=repo.secret_id, token_key_name=repo.token_key_field, org_id_key_name=repo.org_id_key_field),
+                user_id=message.from_user.id,
+            )
+            UserMcpService(db_session).create(user_id=user.tg_id, mcp_gateway_id=mcp.id, mcp_base_url=mcp.url)
 
         await state.clear()
         await message.answer(

@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from openai import OpenAI
+from openai.types.responses.tool import Tool
 from openai.types.responses import Response
 from openai.types.responses.response_output_item import McpApprovalRequest
 
 from logger import logger
+import settings
 
 
 class IChat(abc.ABC):
@@ -29,13 +31,16 @@ class ApproveRequest:
 class Chat(IChat):
     def __init__(
         self,
-        client: OpenAI,
         model_url: str,
-        tools: list[dict[str, Any]] | None = None,
+        tools: list[Tool] | None = None,
         developer_input: list[str] | None = None,
         previous_response_id: str | None = None,
     ):
-        self.client = client
+        self.client = OpenAI(
+            api_key=settings.IAM_TOKEN,
+            base_url=settings.AI_CHAT_BASE_URL,
+            project=settings.YC_FOLDER_ID,
+        )
         self.model_url = model_url
         self.tools = tools
         self.developer_input = self._build_developer_input(developer_input)
@@ -113,7 +118,7 @@ class Chat(IChat):
         logger.info("Request was built")
         return data
 
-    def approve_mcp_requests(self, requests: list[ApproveRequest]) -> Response:
+    def approve_mcp_requests(self, requests: list[ApproveRequest]) -> Response | list[McpApprovalRequest] | None:
         response = self.client.responses.create(
             **self._build_request(approval_requests=requests),
         )
@@ -123,6 +128,7 @@ class Chat(IChat):
         else:
             logger.info("Requests was successfully approved")
 
+        response = self._handle_response(response)
         return response
 
     def message(self, text: str, files: list[str] | None = None, auto_approve: bool = False):

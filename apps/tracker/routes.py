@@ -11,6 +11,4 @@ include_view(router, views.DeleteSecretTrackerFilterView())
 include_view(router, views.UpdateSecretTrackerFilterView())
 include_view(router, views.ProcessTrackerOrgIdStateView())
 include_view(router, views.ProcessTrackerTokenStateView())
-
-
-router.message()
+include_view(router, views.AIMessageFilterView())

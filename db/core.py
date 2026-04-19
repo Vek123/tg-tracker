@@ -28,6 +28,7 @@ class DBSessionManager:
         self._engine = create_engine(
             url=url,
             connect_args=connect_args,
+            echo=True,
         )
         self._sessionmaker = sessionmaker(
             bind=self._engine,
