@@ -5,3 +5,4 @@ yandex-ai-studio-sdk==0.19.2
 openai==2.21.0
 pydantic==2.12.5
 python-dotenv==1.2.1
+alembic==1.18.4

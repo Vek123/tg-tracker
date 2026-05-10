@@ -11,8 +11,6 @@ from sqlalchemy.engine import (
     Connection,
 )
 
-from apps.core.models import Model
-
 from logger import logger
 import settings
 
@@ -64,12 +62,6 @@ class DBSessionManager:
             except Exception:
                 connection.rollback()
                 raise
-
-    def create_tables(self) -> None:
-        with self.connect() as conn:
-            Model.metadata.create_all(conn)
-
-        logger.info("Tables was created")
 
 
 db_manager = DBSessionManager(**settings.DATABASE)

@@ -17,7 +17,6 @@ SA_KEY = SAKey(**json.loads(os.environ["SA_KEY"]))
 YC_FOLDER_ID = os.environ["YC_FOLDER_ID"]
 JWT_TOKEN = create_jwt_token(SA_KEY)
 IAM_TOKEN = create_iam_token(SA_KEY)
-API_KEY = os.environ["API_KEY"]
 
 AI_CHAT_BASE_URL = "https://ai.api.cloud.yandex.net/v1"
 

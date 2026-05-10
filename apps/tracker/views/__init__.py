@@ -1,5 +1,5 @@
 from .commands import AddTrackerCredentialsCommandView, StartCommandView
-from .filters import DeleteSecretTrackerFilterView, UpdateSecretTrackerFilterView, AIMessageFilterView
+from .filters import DeleteSecretTrackerFilterView, UpdateSecretTrackerFilterView, AIMessageFilterView, SelectMcpRequestFilterView, ConfirmMcpRequestFilterView
 from .states import ProcessTrackerOrgIdStateView, ProcessTrackerTokenStateView
 
 __all__ = [
@@ -10,4 +10,6 @@ __all__ = [
     "UpdateSecretTrackerFilterView",
     "ProcessTrackerOrgIdStateView",
     "ProcessTrackerTokenStateView",
+    "SelectMcpRequestFilterView",
+    "ConfirmMcpRequestFilterView",
 ]

@@ -26,6 +26,7 @@ class IChat(abc.ABC):
 class ApproveRequest:
     id: str
     approve: bool = False
+    title: str | None = None
 
 
 class Chat(IChat):
@@ -137,8 +138,8 @@ class Chat(IChat):
             **self._build_request(text, files),
         )
         logger.info("Response received")
+        processed_response = self._handle_response(response)
         while True:
-            processed_response = self._handle_response(response)
             if not processed_response:
                 return None
             elif isinstance(processed_response, str):

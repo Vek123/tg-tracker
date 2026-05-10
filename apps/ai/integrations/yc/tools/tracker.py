@@ -19,8 +19,8 @@ class McpTrackerData:
 def get_personal_create_tools(data: McpTrackerData) -> tuple[McpTool]:
     tools = deepcopy(CreateMcpToolsPayload)
     for tool in tools:
-        tool.action.forward_headers["x-cloud-org-id"] = f"\\(lockboxPayload(\"{data.secret_id}\"; \"{data.org_id_key_name}\"))"
-        tool.action.header.header_value = f"\\(lockboxPayload(\"{data.secret_id}\"; \"{data.token_key_name}\"))"
+        tool.action.forward_headers["x-cloud-org-id"] = f"\\(lockboxPayload(\"{data.secret_id}\"; \"{data.org_id_key_name}\"; \"\"))"
+        tool.action.header.header_value = f"OAuth \\(lockboxPayload(\"{data.secret_id}\"; \"{data.token_key_name}\"; \"\"))"
 
     return tools
 
@@ -55,7 +55,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -75,7 +75,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -95,7 +95,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -115,7 +115,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -135,7 +135,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -155,7 +155,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -175,7 +175,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -195,7 +195,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -215,7 +215,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -235,7 +235,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -255,7 +255,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -275,7 +275,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -295,7 +295,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -315,7 +315,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -335,7 +335,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -355,7 +355,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -375,7 +375,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -395,7 +395,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",
@@ -415,7 +415,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             forward_headers={
                 "x-cloud-org-id": "fake",
             },
-            transport="SSE",
+            transport="STREAMABLE",
             tool_call=ToolCall(
                 tool_name="GetIssue",
                 parameters_json="\\( . )",

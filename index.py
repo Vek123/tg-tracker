@@ -9,7 +9,6 @@ from aiogram.client.default import DefaultBotProperties
 import settings
 
 from apps.fsm import init_fsm_storage
-from db.core import db_manager
 from logger import logger
 from routes import router
 from utils.import_ import import_attr
@@ -36,7 +35,6 @@ def register_middlewares(dp: Dispatcher, middlewares_paths: list[str]):
             dp.observers[observer].middleware(cls())
 
 
-db_manager.create_tables()
 dp = Dispatcher(storage=init_fsm_storage())
 bot = Bot(settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2))
 

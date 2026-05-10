@@ -25,3 +25,6 @@ class TrackerMcpRepository:
             tools=get_personal_create_tools(data),
         )
         return self.client.update(mcp_gateway_id=mcp_gateway_id, data=payload)
+
+    def delete(self, mcp_gateway_id: str) -> None:
+        self.client.delete(mcp_gateway_id=mcp_gateway_id)

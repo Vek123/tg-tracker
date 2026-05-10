@@ -51,7 +51,7 @@ class HttpCall(Base):
 class McpCall(Base):
     url: str
     tool_call: ToolCall
-    transport: Literal["SSE", "SSE"] = "SSE"
+    transport: Literal["SSE", "STREAMABLE"] = "SSE"
     unauthorized: dict | None = None
     header: HeaderAuthorization | None = None
     service_account: dict[str, Any] | None = None

@@ -10,7 +10,6 @@ from apps.ai.services.user_mcp import UserMcpService
 from apps.core.schemas import Observer
 from apps.core.views import View
 from apps.vault.integrations.yc.repositories import TrackerSecretRepository, YCVaultClient, TrackerData
-from apps.vault.services.secret import SecretService
 from db.core import Session
 import settings
 
@@ -26,10 +25,10 @@ class UpdateSecretTrackerStateView(View):
 
     async def handle(self, callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        await callback.message.answer(
-            "Давай начнём, сначала тебе нужно отправить мне свой OAuth токен от трекера\\."
-            + " Не переживай, я его буду хранить всегда в зашифрованном виде\\."
-        )
+        await callback.message.answer(self.quote(
+            "Давай начнём, сначала тебе нужно отправить мне свой OAuth токен от трекера.",
+            "Не переживай, я его буду хранить всегда в зашифрованном виде.",
+        ))
         await state.set_state(TrackerCreds.token)
 
 
@@ -39,7 +38,7 @@ class ProcessTrackerTokenStateView(View):
         [TrackerCreds.token],
     )
 
-    async def handle(self, message: Message, state: FSMContext, db_session: Session):
+    async def handle(self, message: Message, state: FSMContext, db_session: Session, user: User):
         token = message.text
         data = await state.get_data()
         client = YCVaultClient(settings.IAM_TOKEN)
@@ -49,15 +48,11 @@ class ProcessTrackerTokenStateView(View):
         else:
             tracker_repo = TrackerSecretRepository.create(client, TrackerData(token=token), message.from_user.id)
             await state.update_data(secret_id=tracker_repo.secret_id)
-            SecretService(db_session).create(
-                user_id=message.from_user.id,
-                secret_id=tracker_repo.secret_id,
-            )
+            user.secret_id = tracker_repo.secret_id
+            db_session.commit()
 
         await state.set_state(TrackerCreds.org_id)
-        await message.answer(
-            "Теперь мне нужен Org\\-ID\\."
-        )
+        await message.answer(self.quote("Теперь мне нужен Org-ID."))
 
 
 class ProcessTrackerOrgIdStateView(View):
@@ -81,5 +76,5 @@ class ProcessTrackerOrgIdStateView(View):
 
         await state.clear()
         await message.answer(
-            f"Хорошо, мы записали твои данные в секрет: {data['secret_id']}"
+            self.quote(f"Хорошо, мы записали твои данные в секрет: {data['secret_id']}. Можешь начать общаться с ассистентом.")
         )
