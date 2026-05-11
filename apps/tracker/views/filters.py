@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
@@ -15,6 +17,8 @@ import settings
 
 from ..keyboards import ConfirmMcpRequestKeyboard, TrackerCredentialsExistedSecretKeyboard
 from ..states import TrackerCreds
+
+logger = logging.getLogger('bot')
 
 
 class UpdateSecretTrackerFilterView(View):
@@ -96,9 +100,31 @@ class AIMessageFilterView(View):
             ))
 
         chat = AITrackerHelper(user, db_session)
-        answer = chat.message(message.text)
+        if message.text:
+            answer = chat.message(message.text)
+        else:
+            if message.voice:
+                file_id = message.voice.file_id
+                mime_type = message.voice.mime_type
+            elif message.audio:
+                file_id = message.audio.file_id
+                mime_type = message.audio.mime_type
+            else:
+                return message.answer(self.quote("Не удалось обработать сообщение."))
+
+            try:
+                file = await message.bot.get_file(file_id)
+                audio = await message.bot.download_file(file.file_path)
+            except Exception as e:
+                logger.error(e)
+                return message.answer(self.quote("Не удалось обработать голосовое сообщение."))
+            else:
+                answer = chat.voice(audio.getvalue(), mime_type)
+
         if isinstance(answer, list):
             return await message.answer(self.quote("Подтверди или отмени операцию, запрошенную ассистентом.\n\nКрасное - отменить\nЗелёное - подтвердить"), reply_markup=ConfirmMcpRequestKeyboard.build(answer))
+        elif answer is None:
+            return message.answer(self.quote("Не удалось обработать сообщение."))
 
         return await message.answer(self.quote(answer))
 

@@ -10,6 +10,15 @@ from apps.ai.dialog import ApproveRequest, Chat
 
 from sqlalchemy.orm import Session
 
+DEVELOPER_PROMPT = """
+Ты - секретарь, который использует MCP трекера для его управления.
+Твоя задача получать от пользователя указания (поиск, создание, изменение) и выполнять их в трекере.
+Также можешь использовать свои аналитические навыки, в случае если тебя прямо попросили сделать анализ или консультацию.
+
+ВАЖНО:
+ЛЮБЫЕ ДРУГИЕ ЗАДАЧИ ТЫ НЕ ДОЛЖЕН РЕШАТЬ (узнать погоду, угадать ставку и т.п.). ТЫ ДОЛЖЕН РЕШАТЬ ТОЛЬКО РАБОЧИЕ ЗАДАЧИ.
+"""
+
 
 class AITrackerHelper:
     def __init__(
@@ -35,10 +44,23 @@ class AITrackerHelper:
 
     def message(self, text: str) -> str | list[ApproveRequest] | None:
         response = self.chat.message(text)
+        if not response:
+            return
+
+        return self.handle_response(response)
+
+    def voice(self, audio: bytes, mime_type: str | None = None) -> str | list[ApproveRequest] | None:
+        response = self.chat.voice(audio, mime_type=mime_type)
+        if not response:
+            return
+
         return self.handle_response(response)
 
     def approve_requests(self, requests: list[ApproveRequest]) -> str | list[ApproveRequest] | None:
         response = self.chat.approve_mcp_requests(requests=requests)
+        if not response:
+            return
+
         return self.handle_response(response)
 
     def build_approve_requests(self, requests: list[McpApprovalRequest]) -> ApproveRequest:

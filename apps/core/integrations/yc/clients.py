@@ -1,7 +1,7 @@
 import time
 import requests
 
-from typing import Any
+from typing import Any, Callable
 
 from .schemas import Base, OperationResponse
 
@@ -16,29 +16,39 @@ class HTTPClient:
         self,
         url: str,
         response_type: T | None = None,
+        response_builder: Callable[[bytes], Any] | None = None,
         method: str = "get",
         data: Base | None = None,
+        body: str | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         is_operation: bool = True,
-    ) -> T:
-        if response_type is None:
+    ) -> T | Any | None:
+        if not response_type:
             response_type = dict
 
         response = self.session.request(
             method=method,
             url=url,
             params=params,
+            data=body,
             json=data and data.model_dump(),
             headers=headers,
         )
         response.raise_for_status()
         if is_operation:
             response = OperationResponse.model_validate(response.json())
+            operation_id = response.id
             response = self.wait_operation(response, headers)
+            if not response.response:
+                return operation_id
+
             return response_type(**response.response)
 
-        return response_type(**response.json())
+        if not response:
+            return
+
+        return response_builder(response.content) if response_builder else response_type(**response.json())
 
     def wait_operation(self, data: OperationResponse, headers: dict[str, Any]) -> OperationResponse:
         while not data.done:

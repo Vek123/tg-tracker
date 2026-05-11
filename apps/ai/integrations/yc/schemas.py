@@ -132,3 +132,32 @@ class McpGet(McpCreateIn):
 
 class McpDeleteOut(Base):
     mcp_gateway_id: str
+
+
+class SpeechKitRawAudio(Base):
+    audio_encoding: Literal["AUDIO_ENCODING_UNSPECIFIED", "LINEAR16_PCM"] = "AUDIO_ENCODING_UNSPECIFIED"
+    sample_rate_hertz: str | None = None
+    audio_channel_count: str | None = None
+
+
+class SpeechKitContainerAudio(Base):
+    container_audio_type: Literal["CONTAINER_AUDIO_TYPE_UNSPECIFIED", "WAV", "OGG_OPUS", "MP3"] = "WAV"
+
+
+class SpeechKitAudioFormat(Base):
+    raw_audio: SpeechKitRawAudio | None = None
+    container_audio: SpeechKitContainerAudio | None = None
+    
+
+class SpeechKitRecognitionModel(Base):
+    model: str | None = None
+    audio_format: SpeechKitAudioFormat
+
+
+class SpeechKitRecognizeIn(Base):
+    content: str
+    recognition_model: SpeechKitRecognitionModel
+
+
+class SpeechKitRecognizeOut(Base):
+    text: str

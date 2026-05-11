@@ -17,7 +17,7 @@ class Base(BaseModel):
 class ErrorData(Base):
     code: int
     message: str
-    details: list[dict[str, Any]]
+    details: list[dict[str, Any]] | None = None
 
 
 class OperationResponse(Base):
@@ -28,4 +28,4 @@ class OperationResponse(Base):
     done: bool
     error: ErrorData | None = None
     description: str
-    response: dict[str, Any] | None = None
+    response: dict[str, Any] | str | None = None

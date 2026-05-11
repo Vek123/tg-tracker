@@ -5,6 +5,7 @@ from apps.tracker import views
 
 
 router = Router()
+include_view(router, views.ClearAiChatHistoryCommandView())
 include_view(router, views.AddTrackerCredentialsCommandView())
 include_view(router, views.StartCommandView())
 include_view(router, views.DeleteSecretTrackerFilterView())
