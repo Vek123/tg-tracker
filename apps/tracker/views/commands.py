@@ -34,7 +34,7 @@ class AddTrackerCredentialsCommandView(View):
         "message",
         [filters.Command("login")],
     )
-    async def handle(self, message: Message, state: FSMContext, db_session: Session, user: User):
+    async def handle(self, message: Message, state: FSMContext, user: User):
         if user.secret_id:
             await message.answer(
                 self.quote("У тебя уже есть секрет с твоими данными. Нажми на кнопку, чтобы выбрать действие."),
@@ -50,3 +50,15 @@ class AddTrackerCredentialsCommandView(View):
             "Давай начнём, сначала тебе нужно отправить мне свой OAuth токен от трекера.",
             "Не переживай, я его буду хранить всегда в зашифрованном виде.",
         ))
+
+
+class ClearAiChatHistoryCommandView(View):
+    observer = Observer(
+        "message",
+        [filters.Command("clear_chat")],
+    )
+
+    async def handle(self, message: Message, db_session: Session, user: User):
+        user.previous_ai_response_id = None
+        db_session.commit()
+        await message.answer(self.quote("История чата с ассистентом очищена."))

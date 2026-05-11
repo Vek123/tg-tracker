@@ -8,6 +8,7 @@ from openai.types.responses.tool import Tool
 from openai.types.responses import Response
 from openai.types.responses.response_output_item import McpApprovalRequest
 
+from apps.ai.integrations.yc.clients import SpeechKitClient
 from logger import logger
 import settings
 
@@ -134,8 +135,47 @@ class Chat(IChat):
 
     def message(self, text: str, files: list[str] | None = None, auto_approve: bool = False):
         logger.info("Sending message...")
+        try:
+            response = self.client.responses.create(
+                **self._build_request(text, files),
+            )
+        except Exception as e:
+            logger.error("Error was occured while sending message")
+            logger.error(e)
+            return None
+
+        logger.info("Response received")
+        processed_response = self._handle_response(response)
+        while True:
+            if not processed_response:
+                return None
+            elif isinstance(processed_response, str):
+                return processed_response
+
+            if not auto_approve:
+                break
+            else:
+                response = self.approve_mcp_requests([ApproveRequest(request.id, True) for request in processed_response])
+
+        return processed_response
+
+    def voice(self, audio: bytes, auto_approve: bool = False, mime_type: str | None = None) -> str | list[McpApprovalRequest] | None:
+        logger.info("Sending voice...")
+        speech_client = SpeechKitClient(settings.IAM_TOKEN)
+        operation_id = speech_client.recognize(audio, mime_type)
+        responses = speech_client.get_recognition(operation_id)
+        try:
+            text = responses[1]["result"]["finalRefinement"]["normalizedText"]["alternatives"][0]["text"]
+        except Exception:
+            logger.warning("Can't parse voice recognition")
+            return None
+
+        if not text:
+            logger.warning("Voice recognition is empty")
+            return None
+
         response = self.client.responses.create(
-            **self._build_request(text, files),
+            **self._build_request(text),
         )
         logger.info("Response received")
         processed_response = self._handle_response(response)

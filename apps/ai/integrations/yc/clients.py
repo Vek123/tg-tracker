@@ -1,6 +1,12 @@
-from apps.core.integrations.yc.clients import IAMTokenBearerAuthClient
+import base64
+import json
 
-from .schemas import McpCreateIn, McpGet, McpUpdateIn
+import filetype
+
+from apps.core.integrations.yc.clients import IAMTokenBearerAuthClient
+import settings
+
+from .schemas import McpCreateIn, McpGet, McpUpdateIn, SpeechKitAudioFormat, SpeechKitContainerAudio, SpeechKitRecognitionModel, SpeechKitRecognizeIn
 
 
 class McpClient(IAMTokenBearerAuthClient):
@@ -35,3 +41,51 @@ class McpClient(IAMTokenBearerAuthClient):
             response_type=McpGet,
             is_operation=False,
         )
+
+
+class SpeechKitClient(IAMTokenBearerAuthClient):
+    base_url = "https://stt.api.cloud.yandex.net/stt/v3"
+
+    def _get_container_audio_type(self, audio: bytes, mime_type: str | None = None) -> str:
+        if not mime_type:
+            try:
+                mime_type = filetype.guess_mime(audio)
+            except TypeError:
+                return "CONTAINER_AUDIO_TYPE_UNSPECIFIED"
+
+        mime_type = mime_type.lower().strip()
+        if mime_type.endswith("mpeg"):
+            return "MP3"
+        elif mime_type.endswith("wav"):
+            return "WAV"
+        elif mime_type.endswith("ogg"):
+            return "OGG_OPUS"
+
+        return "CONTAINER_AUDIO_TYPE_UNSPECIFIED"
+
+    def recognize(self, audio: bytes, mime_type: str | None = None) -> None:
+        response = self.request(
+            url=f"{self.base_url}/recognizeFileAsync",
+            method="post",
+            data=SpeechKitRecognizeIn(
+                content=base64.b64encode(audio).decode(),
+                recognition_model=SpeechKitRecognitionModel(
+                    model="general",
+                    audio_format=SpeechKitAudioFormat(
+                        container_audio=SpeechKitContainerAudio(
+                            container_audio_type=self._get_container_audio_type(audio, mime_type),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        return response
+
+    def get_recognition(self, operation_id: str) -> dict:
+        response = self.request(
+            url=f"{self.base_url}/getRecognition?operation_id={operation_id}",
+            method="get",
+            is_operation=False,
+            response_builder=lambda body: [json.loads(line) for line in body.decode().strip().split("\n")]
+        )
+        return response

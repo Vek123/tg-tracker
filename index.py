@@ -15,7 +15,6 @@ from utils.import_ import import_attr
 
 
 async def handle_request(message: dict[str, Any]):
-    logger.info(f"Handle incoming message: {message}")
     response = await dp.feed_webhook_update(bot, message)
     logger.info(f"Got response: {response}")
 
