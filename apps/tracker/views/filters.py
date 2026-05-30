@@ -66,6 +66,8 @@ class DeleteSecretTrackerFilterView(View):
     async def handle(self, callback: CallbackQuery, db_session: Session, user: User):
         await callback.message.delete()
         await callback.answer()
+        user.previous_ai_response_id = None
+        db_session.commit()
         if user.secret_id:
             deleted = await self._delete_secret(db_session, user)
             if deleted:
@@ -126,7 +128,7 @@ class AIMessageFilterView(View):
         elif answer is None:
             return await message.answer(self.quote("Не удалось обработать сообщение."))
 
-        return await message.answer(self.quote(answer))
+        return await message.answer(answer)
 
 
 class SelectMcpRequestFilterView(View):
@@ -168,4 +170,4 @@ class ConfirmMcpRequestFilterView(View):
         if isinstance(answer, list):
             return await callback.message.answer(self.quote("Подтверди или отмени операцию, запрошенную ассистентом.\n\nКрасное - отменить\nЗелёное - подтвердить)"), reply_markup=ConfirmMcpRequestKeyboard.build(answer))
 
-        return await callback.message.answer(self.quote(answer))
+        return await callback.message.answer(answer)

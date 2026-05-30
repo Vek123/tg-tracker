@@ -133,7 +133,7 @@ class Chat(IChat):
         response = self._handle_response(response)
         return response
 
-    def message(self, text: str, files: list[str] | None = None, auto_approve: bool = False):
+    def message(self, text: str, files: list[str] | None = None, auto_approve: bool = False) -> str | list[McpApprovalRequest] | None:
         logger.info("Sending message...")
         try:
             response = self.client.responses.create(
