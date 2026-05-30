@@ -77,7 +77,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="GetIssueLinks",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -89,7 +89,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
     McpTool(
         name="GetIssues",
         description="Get issues by filters such as status, assignee, queue, tags, or by raw query.\n\nYou must provide either a `filter` (dictionary of structured filters) or a `query` (a free-form search query in Yandex Tracker Query Language).\n\nThe result may be paginated. If the total number of issues is large, the response will include:\n- `page`: current page number\n- `pages_count`: total number of pages\n- `issues`: list of issues for this page\n\nTo fetch all matching issues, you must call this tool multiple times with increasing `page` number, e.g., page=1, page=2, ..., until `page` == `pages_count`.\nSet `per_page` to control the number of issues per page (recommended is 50).\n\nYou can also limit the response size using:\n- `fields`: list of fields to include in each issue (default is ['key'])\n- `comments_limit`: how many recent comments to return per issue (0 by default — no comments)\n\n",
-        input_json_schema="{\"properties\":{\"comments_limit\":{\"default\":0,\"description\":\"Number of most recent comments to include.\\nIf set to 0, no comments will be returned.\\nUse this to reduce response size and save context.\\nIf not set, the full comment history will be included.\",\"title\":\"Comments Limit\",\"type\":\"integer\"},\"fields\":{\"default\":[\"key\"],\"description\":\"List of fields to include in the response.\\nUse ['key'] to get just the issue key or ['summary', 'description'] to reduce response size.\\nIf not specified, all available fields will be returned.\\nCommon field names include: 'summary', 'description', 'status', 'type', 'priority', 'assignee', 'createdBy'.\",\"items\":{\"type\":\"string\"},\"title\":\"Fields\",\"type\":\"array\"},\"filter\":{\"anyOf\":[{\"additionalProperties\":true,\"type\":\"object\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Dictionary with filter parameters. Ignored if `query` is provided.\\n\\nExample:\\n  {\\\"statusType\\\": \\\"open\\\", \\\"assignee\\\": \\\"me()\\\", \\\"queue\\\": [\\\"CORE\\\"]}\\n\\nAvailable keys:\\n- statusType: list of statuses or alias 'open'. Available values:\\n    'new', 'inProgress', 'paused', 'cancelled', 'done'\\n- assignee: login or me()\\n- queue: list of queue keys (e.g., ['CORE', 'TEST'])\\n- tags: list of tags (e.g., ['urgent'])\\n- created_from / created_to: ISO-8601 dates (e.g., '2024-01-01')\\n- updated_from / updated_to: ISO-8601 dates\\n\\nUse this when you want to build structured filters without writing query manually.\",\"title\":\"Filter\"},\"order\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Sort direction and field (ONLY with `filter`). Format: [+/-]\\u003cfield_key\\u003e, where '+' is ascending and '-' is descending. Example: '+createdAt', '-updated'.\",\"title\":\"Order\"},\"page\":{\"anyOf\":[{\"type\":\"integer\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Page number to retrieve (starts from 1).\\nUse together with `per_page` for paginated access.\\nIf the result set is large and `page` is not specified, automatic pagination will be triggered starting from page 1.\\nTo fetch all issues, iterate through pages from 1 to `pages_count` (returned in the response).\\nFor example:\\n  { \\\"page\\\": 1, \\\"per_page\\\": 20 }\\n  { \\\"page\\\": 2, \\\"per_page\\\": 20 }\\n  ...\\n  Stop when `page` equals `pages_count`.\",\"title\":\"Page\"},\"per_page\":{\"anyOf\":[{\"type\":\"integer\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Number of issues per page (recommended is 20).\\nMaximum value depends on the Tracker API limits, typically between 20 and 100.\\nUse smaller values to reduce response size and avoid timeouts.\\nCombined with `page`, this enables pagination.\\nTo get all issues, iterate over pages until `page == pages_count`.\",\"title\":\"Per Page\"},\"query\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"A free-form filter query written in Yandex Tracker Query Language.\\n\\nIf this field is set, `filter` must be omitted.\\n\\nThis language allows flexible filtering based on issue fields. It supports logical operators, comparisons, functions, and grouping. Key syntax rules:\\n\\nBasic format: \\u003cfield\\u003e\\u003coperator\\u003e\\u003cvalue\\u003e, for example:\\n  - assignee:me() — issues assigned to the current user\\n  - status:inProgress — issues with 'inProgress' status\\n  - queue:CORE — issues from the CORE queue\\n  - created:\\u003e=2024-01-01 — issues created on or after Jan 1, 2024\\n  - priority:high — issues with high priority\\n\\nSupported comparison operators:\\n  - : — equals (e.g., status:open)\\n  - != — not equal (e.g., status!=done)\\n  - \\u003e / \\u003e= — greater / greater or equal (e.g., created:\\u003e2023-12-01)\\n  - \\u003c / \\u003c= — less / less or equal (e.g., updated:\\u003c2024-06-01)\\n\\nLogical operators:\\n  - AND — logical AND (e.g., status:open AND assignee:me())\\n  - OR — logical OR (e.g., queue:CORE OR queue:TEST)\\n  - NOT — negation (e.g., NOT tags:internal)\\n\\nGrouping: use parentheses to combine expressions:\\n  - (status:open OR status:inProgress) AND priority:high\\n\\nMultiple values:\\n  - tags:urgent OR tags:important — issues that have at least one of the tags\\n  - followers:me() — issues followed by the current user\\n\\nBuilt-in functions:\\n  - me() — current user (can be used with assignee, createdBy, followers, etc.)\\n  - today() — current date (e.g., updated:\\u003e=today())\\n\\nSorting results:\\nYou can sort filter results by appending a \\\"Sort By\\\" clause at the end of the query. Provide a field name to sort by:\\n  \\\"Sort By\\\": Created\\nOptionally specify sort order: ASC (ascending) or DESC (descending):\\n  \\\"Sort By\\\": Created ASC\\nTo sort by multiple fields, list them by priority, separated by commas:\\n  \\\"Sort By\\\": Created ASC, Updated DESC\\nExample scenarios:\\n  - All issues from queue CORE assigned to me:\\n      queue:CORE AND assignee:me()\\n  - Issues with tag urgent created in 2024, newest first by update time:\\n      tags:urgent AND created:\\u003e=2024-01-01 AND created:\\u003c=2024-12-31 \\\"Sort By\\\": Updated DESC\\n  - Open issues excluding queue TEST, oldest first by creation date:\\n      status!=done AND NOT queue:TEST \\\"Sort By\\\": Created ASC\\nFull syntax guide: https://yandex.ru/support/tracker/ru/user/query-filter\",\"title\":\"Query\"}},\"required\":[],\"type\":\"object\"}",
+        input_json_schema="{\"properties\":{\"comments_limit\":{\"default\":0,\"description\":\"Number of most recent comments to include.\\nIf set to 0, no comments will be returned.\\nUse this to reduce response size and save context.\\nIf not set, the full comment history will be included.\",\"title\":\"Comments Limit\",\"type\":\"integer\"},\"fields\":{\"default\":[\"key\"],\"description\":\"List of fields to include in the response.\\nUse ['key'] to get just the issue key or ['summary', 'description'] to reduce response size.\\nIf not specified, all available fields will be returned.\\nCommon field names include: 'summary', 'description', 'status', 'type', 'priority', 'assignee', 'createdBy'.\",\"items\":{\"type\":\"string\"},\"title\":\"Fields\",\"type\":\"array\"},\"filter\":{\"anyOf\":[{\"additionalProperties\":true,\"type\":\"object\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Dictionary with filter parameters. Ignored if `query` is provided.\\n\\nExample:\\n  {\\\"statusType\\\": \\\"open\\\", \\\"assignee\\\": \\\"me()\\\", \\\"queue\\\": [\\\"CORE\\\"]}\\n\\nAvailable keys:\\n- statusType: list of statuses or alias 'open'. Available values:\\n    'new', 'inProgress', 'paused', 'cancelled', 'done'\\n- assignee: login or me()\\n- queue: list of queue keys (e.g., ['CORE', 'TEST'])\\n- tags: list of tags (e.g., ['urgent'])\\n- created_from / created_to: ISO-8601 dates (e.g., '2024-01-01')\\n- updated_from / updated_to: ISO-8601 dates\\n\\nUse this when you want to build structured filters without writing query manually.\",\"title\":\"Filter\"},\"page\":{\"anyOf\":[{\"type\":\"integer\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Page number to retrieve (starts from 1).\\nUse together with `per_page` for paginated access.\\nIf the result set is large and `page` is not specified, automatic pagination will be triggered starting from page 1.\\nTo fetch all issues, iterate through pages from 1 to `pages_count` (returned in the response).\\nFor example:\\n  { \\\"page\\\": 1, \\\"per_page\\\": 20 }\\n  { \\\"page\\\": 2, \\\"per_page\\\": 20 }\\n  ...\\n  Stop when `page` equals `pages_count`.\",\"title\":\"Page\"},\"per_page\":{\"anyOf\":[{\"type\":\"integer\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Number of issues per page (recommended is 20).\\nMaximum value depends on the Tracker API limits, typically between 20 and 100.\\nUse smaller values to reduce response size and avoid timeouts.\\nCombined with `page`, this enables pagination.\\nTo get all issues, iterate over pages until `page == pages_count`.\",\"title\":\"Per Page\"},\"query\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"A free-form filter query written in Yandex Tracker Query Language.\\n\\nIf this field is set, `filter` must be omitted.\\n\\nThis language allows flexible filtering based on issue fields. It supports logical operators, comparisons, functions, and grouping. Key syntax rules:\\n\\nBasic format: \\u003cfield\\u003e\\u003coperator\\u003e\\u003cvalue\\u003e, for example:\\n  - assignee:me() — issues assigned to the current user\\n  - status:inProgress — issues with 'inProgress' status\\n  - queue:CORE — issues from the CORE queue\\n  - created:\\u003e=2024-01-01 — issues created on or after Jan 1, 2024\\n  - priority:high — issues with high priority\\n\\nSupported comparison operators:\\n  - : — equals (e.g., status:open)\\n  - != — not equal (e.g., status!=done)\\n  - \\u003e / \\u003e= — greater / greater or equal (e.g., created:\\u003e2023-12-01)\\n  - \\u003c / \\u003c= — less / less or equal (e.g., updated:\\u003c2024-06-01)\\n\\nLogical operators:\\n  - AND — logical AND (e.g., status:open AND assignee:me())\\n  - OR — logical OR (e.g., queue:CORE OR queue:TEST)\\n  - NOT — negation (e.g., NOT tags:internal)\\n\\nGrouping: use parentheses to combine expressions:\\n  - (status:open OR status:inProgress) AND priority:high\\n\\nMultiple values:\\n  - tags:urgent OR tags:important — issues that have at least one of the tags\\n  - followers:me() — issues followed by the current user\\n\\nBuilt-in functions:\\n  - me() — current user (can be used with assignee, createdBy, followers, etc.)\\n  - today() — current date (e.g., updated:\\u003e=today())\\n\\nExample scenarios:\\n  - All issues from queue CORE assigned to me:\\n      queue:CORE AND assignee:me()\\n  - Issues with tag urgent created in 2024:\\n      tags:urgent AND created:\\u003e=2024-01-01 AND created:\\u003c=2024-12-31\\n  - Open issues excluding queue TEST:\\n      status!=done AND NOT queue:TEST\\n\\nFull syntax guide: https://yandex.ru/support/tracker/ru/user/query-filter\",\"title\":\"Query\"}},\"type\":\"object\"}",
         action=McpCall(
             url="https://bba11klgcd484rnls5kc.containers.yandexcloud.net/mcp",
             forward_headers={
@@ -97,7 +97,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="GetIssues",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -117,7 +117,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="GetProject",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -137,7 +137,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="GetPortfolio",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -157,7 +157,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="GetGoal",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -177,7 +177,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="SearchEntities",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -197,7 +197,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="CreateGoal",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -217,7 +217,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="UpdateGoal",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -237,7 +237,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="DeleteGoal",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -257,7 +257,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="CreateIssue",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -277,7 +277,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="CreateComment",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -297,7 +297,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="ChangeIssueStatus",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -317,7 +317,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="UpdateIssue",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -337,7 +337,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="BulkUpdate",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -357,7 +357,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="BulkTransition",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -377,7 +377,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="BulkMove",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -397,7 +397,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="WaitForBulkChange",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(
@@ -417,7 +417,7 @@ CreateMcpToolsPayload: Iterable[McpTool] = (
             },
             transport="STREAMABLE",
             tool_call=ToolCall(
-                tool_name="GetIssue",
+                tool_name="BulkUpdateMetaEntities",
                 parameters_json="\\( . )",
             ),
             header=HeaderAuthorization(

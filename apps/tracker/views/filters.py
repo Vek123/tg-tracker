@@ -66,6 +66,8 @@ class DeleteSecretTrackerFilterView(View):
     async def handle(self, callback: CallbackQuery, db_session: Session, user: User):
         await callback.message.delete()
         await callback.answer()
+        user.previous_ai_response_id = None
+        db_session.commit()
         if user.secret_id:
             deleted = await self._delete_secret(db_session, user)
             if deleted:
